@@ -6,6 +6,7 @@ readme = "README.md"
 authors = ["jer <alphastrata@gmail.com>"]
 description = """A crate for creating channels and crossing them to facilitate communication between different parts of a program."""
 license = "MIT"
+website = "https://github.com/alphastrata/linkk"
 
 [dependencies]
 thiserror = { version = "1.0.40" }
