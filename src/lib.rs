@@ -27,9 +27,9 @@
 /// ```
 #[macro_export]
 macro_rules! link {
-    ($struct1:ident<$t:ty>, $struct2:ident<$t2:ty>) => {{
+    ($v:vis, $struct1:ident<$t:ty>, $struct2:ident<$t2:ty>) => {{
         #[derive(Debug, thiserror::Error)]
-        pub enum LinkError {
+        $v enum LinkError {
             #[error("Failed to send data over channel")]
             SendError1(#[from] std::sync::mpsc::SendError<$t>),
             #[error("Failed to send data over channel")]
@@ -38,32 +38,32 @@ macro_rules! link {
             RecvError(#[from] std::sync::mpsc::RecvError),
         }
 
-        struct $struct1 {
-            tx: std::sync::mpsc::Sender<$t>,
-            rx: std::sync::mpsc::Receiver<$t2>,
+        $v struct $struct1 {
+            $v tx: std::sync::mpsc::Sender<$t>,
+            $v rx: std::sync::mpsc::Receiver<$t2>,
         }
 
-        struct $struct2 {
-            tx: std::sync::mpsc::Sender<$t2>,
-            rx: std::sync::mpsc::Receiver<$t>,
+        $v struct $struct2 {
+            $v tx: std::sync::mpsc::Sender<$t2>,
+            $v rx: std::sync::mpsc::Receiver<$t>,
         }
 
         impl $struct1 {
-            pub fn send(&self, t: $t) -> std::result::Result<(), std::sync::mpsc::SendError<$t>> {
+            $v fn send(&self, t: $t) -> std::result::Result<(), std::sync::mpsc::SendError<$t>> {
                 self.tx.send(t)
             }
 
-            pub fn recv(&self) -> Result<$t2, std::sync::mpsc::RecvError> {
+            $v fn recv(&self) -> Result<$t2, std::sync::mpsc::RecvError> {
                 self.rx.recv()
             }
         }
 
         impl $struct2 {
-            pub fn send(&self, t: $t2) -> std::result::Result<(), std::sync::mpsc::SendError<$t2>> {
+            $v fn send(&self, t: $t2) -> std::result::Result<(), std::sync::mpsc::SendError<$t2>> {
                 self.tx.send(t)
             }
 
-            pub fn recv(&self) -> Result<$t, std::sync::mpsc::RecvError> {
+            $v fn recv(&self) -> Result<$t, std::sync::mpsc::RecvError> {
                 self.rx.recv()
             }
         }
@@ -86,7 +86,7 @@ mod tests {
     fn test_link_macro() {
         let value = 42u32;
 
-        let (link1, link2) = link!(MyType<u32>, MyType2<u64>);
+        let (link1, link2) = link!(pub, MyType<u32>, MyType2<u64>);
 
         link1.send(42).unwrap();
         let result = link2.recv().unwrap();
