@@ -1,4 +1,4 @@
-# link
+# linkk
 
 ## About:
 
@@ -14,7 +14,7 @@ There's almost certainly a nicer way of doing this... but, I dunno what that is.
 
 ```toml
 [dependencies]
-link = "0.1.0"
+linkk = "0.1.0"
 ```
 
 ## Usage:
@@ -22,7 +22,7 @@ link = "0.1.0"
 Here is an example of how to use this crate:
 
 ```rust
-use link::link;
+use linkk::link;
 
 let (link1, link2) = link!(pub, A_2_B<u32>, B_2_A<u64>); // The tx/rx pairs needen't be the same type.
 

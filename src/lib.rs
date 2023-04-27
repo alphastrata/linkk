@@ -8,7 +8,7 @@
 //! infact you can put all sorts of things in there.. I know, I have.
 //!
 //!  ```rust
-//!use link::link;
+//!use linkk::link;
 //!
 //!let (link1, link2) = link!(pub, MyType<u32>, MyType2<u64>);
 //!// link2 receives from link1
