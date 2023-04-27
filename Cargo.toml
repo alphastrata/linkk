@@ -2,13 +2,13 @@
 name = "link"
 version = "0.1.0"
 edition = "2021"
-
+readme = "README.md"
+authors = ["jer <alphastrata@gmail.com>"]
+description = """A crate for creating channels and crossing them to facilitate communication between different parts of a program."""
+license = "MIT"
 
 [dependencies]
-thiserror = { version="1.0.40" }
-tokio =     { version="1.28.0", optional = true }
+thiserror = { version = "1.0.40" }
 
 [features]
 default = []
-# errors = ["dep:thiserror"]
-tokio = ["dep:tokio"]

@@ -1,10 +1,10 @@
 //! This crate is real simple, if makes a set of channels and criss-crosses them.
 //!
-//! I fint myself using this pattern a bit lately to get... things that're hard to get talking to
+//! I find myself using this pattern a bit lately to get... things that're hard to get talking to
 //! eachother talking to eachother.
-//! There is probably a superiour way -- but, I don't know it.
+//! There is probably a better way -- but, I don't know it.
 //!
-//! Conceptually, I think of it as making a bridge, it needn't send the same Types<T> across,
+//! Conceptually, I think of it as making a bridge, it needn't send the same `<T>` across,
 //! infact you can put all sorts of things in there.. I know, I have.
 //!
 //!  ```rust
@@ -21,7 +21,7 @@
 //!
 //! ## Which should save you typing that alernative which would be all this:
 //!
-//! ```ignore
+//! ```
 //!pub struct Link1 {
 //!    tx: std::sync::mpsc::Sender<u32>,
 //!    rx: std::sync::mpsc::Receiver<u64>,
