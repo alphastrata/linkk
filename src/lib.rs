@@ -67,16 +67,16 @@ macro_rules! link {
             )+
         }
     };
-    // #[cfg(feature = "errors")]
-    // {
-    //     #[derive(Debug, thiserror::Error)]
-    //     pub enum LinkError {
-    //         #[error("Failed to send data over channel")]
-    //         SendError(#[from] std::sync::mpsc::SendError<$t>),
-    //         #[error("Failed to receive data over channel")]
-    //         RecvError(#[from] std::sync::mpsc::RecvError),
-    //     }
-    //   }
+    #[cfg(feature = "errors")]
+    {
+        #[derive(Debug, thiserror::Error)]
+        pub enum LinkError {
+            #[error("Failed to send data over channel")]
+            SendError(#[from] std::sync::mpsc::SendError<$t>),
+            #[error("Failed to receive data over channel")]
+            RecvError(#[from] std::sync::mpsc::RecvError),
+        }
+      }
 
     $vis fn init() -> ($t1, $t2){
             let (tx1, rx2) = std::sync::mpsc::channel();
