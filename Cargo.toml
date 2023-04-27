@@ -2,7 +2,13 @@
 name = "link"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+readme = "README.md"
+authors = ["jer <alphastrata@gmail.com>"]
+description = """A crate for creating channels and crossing them to facilitate communication between different parts of a program."""
+license = "MIT"
 
 [dependencies]
+thiserror = { version = "1.0.40" }
+
+[features]
+default = []
