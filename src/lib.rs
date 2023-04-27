@@ -17,77 +17,65 @@
 /// #     tx2: Sender<U>,
 /// #     rx1: Receiver<T>,
 /// # }
-/// // you can do this:
-/// link!(MyType<u32>, MyType2<u64>);
+/// // and so on...
 ///
-/// let value = 42u32;
+/// // you can do this:
+/// let (mytype1, mytype2) = link!(MyType<u32>, MyType2<u64>);
+///
+///
 /// ///etc...
 /// ```
 #[macro_export]
 macro_rules! link {
-    ($vis:expr, $struct1:ident<$t:ident>, $vis2:expr,$struct2:ident<$t2:ident>) => {
-
-        $vis struct $struct1<$t, $t2> {
-            tx: std::sync::mpsc::Sender<$t>,
-            rx: std::sync::mpsc::Receiver<$t2>,
-        }
-        $vis2 struct $struct2<$t, $t2> {
-            tx: std::sync::mpsc::Sender<$t2>,
-            rx: std::sync::mpsc::Receiver<$t>,
-        }
-        impl<$t> $struct1<$t> {
-            pub fn send(&self, t: $t) -> std::result::Result<(), $crate::LinkError> {
-                self.tx.send(t).map_err($crate::LinkError::from)
-            }
-
-            pub fn recv(&self) -> std::result::Result<$t2, $crate::LinkError> {
-                self.rx.recv().map_err($crate::LinkError::from)
-            }
-        }
-
-        impl<$t2> $struct2<$t2> {
-            pub fn send(&self, t: $t2) -> std::result::Result<(), $crate::LinkError> {
-                self.tx.send(t).map_err($crate::LinkError::from)
-            }
-
-            pub fn recv(&self) -> std::result::Result<$t, $crate::LinkError> {
-                self.rx.recv().map_err($crate::LinkError::from)
-            }
-        }
-
-    (pub enum $error:ident { $($variant:ident),+ $(,)? }) => {
-        #[derive(thiserror::Error, Debug)]
-        #[allow(dead_code)]
-        #[allow(non_camel_case_types)]
-        #[repr(u8)]
-        $error pub enum $error {
-            $(
-                #[error("{0}")]
-                $variant(#[from] std::sync::mpsc::RecvError),
-            )+
-        }
-    };
-    #[cfg(feature = "errors")]
-    {
+    ($struct1:ident<$t:ty>, $struct2:ident<$t2:ty>) => {{
         #[derive(Debug, thiserror::Error)]
         pub enum LinkError {
             #[error("Failed to send data over channel")]
-            SendError(#[from] std::sync::mpsc::SendError<$t>),
+            SendError1(#[from] std::sync::mpsc::SendError<$t>),
+            #[error("Failed to send data over channel")]
+            SendError2(#[from] std::sync::mpsc::SendError<$t2>),
             #[error("Failed to receive data over channel")]
             RecvError(#[from] std::sync::mpsc::RecvError),
         }
-      }
 
-    $vis fn init() -> ($t1, $t2){
-            let (tx1, rx2) = std::sync::mpsc::channel();
-            let (tx2, rx1) = std::sync::mpsc::channel();
-            (
-                $struct1 { tx: tx1, rx: rx1 },
-                $struct2 { tx: tx2, rx: rx2 },
-            )
+        struct $struct1 {
+            tx: std::sync::mpsc::Sender<$t>,
+            rx: std::sync::mpsc::Receiver<$t2>,
         }
+
+        struct $struct2 {
+            tx: std::sync::mpsc::Sender<$t2>,
+            rx: std::sync::mpsc::Receiver<$t>,
+        }
+
+        impl $struct1 {
+            pub fn send(&self, t: $t) -> std::result::Result<(), std::sync::mpsc::SendError<$t>> {
+                self.tx.send(t)
+            }
+
+            pub fn recv(&self) -> Result<$t2, std::sync::mpsc::RecvError> {
+                self.rx.recv()
+            }
+        }
+
+        impl $struct2 {
+            pub fn send(&self, t: $t2) -> std::result::Result<(), std::sync::mpsc::SendError<$t2>> {
+                self.tx.send(t)
+            }
+
+            pub fn recv(&self) -> Result<$t, std::sync::mpsc::RecvError> {
+                self.rx.recv()
+            }
+        }
+
+        // pub fn init() -> ($t, $t2) {
+        let (tx1, rx2) = std::sync::mpsc::channel::<$t>();
+        let (tx2, rx1) = std::sync::mpsc::channel::<$t2>();
+
+        ($struct1 { tx: tx1, rx: rx1 }, $struct2 { tx: tx2, rx: rx2 })
+        // }
         //
-    };
+    }};
 }
 
 #[cfg(test)]
@@ -99,11 +87,12 @@ mod tests {
         let value = 42u32;
 
         let (link1, link2) = link!(MyType<u32>, MyType2<u64>);
+
         link1.send(42).unwrap();
         let result = link2.recv().unwrap();
-        assert_eq!(result, 42u64);
+        assert_eq!(result, 42u32);
 
         link1.tx.send(value).unwrap();
-        assert_eq!(link2.rx.recv().unwrap(), value as u64);
+        assert_eq!(link2.rx.recv().unwrap(), value);
     }
 }
