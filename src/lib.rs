@@ -1,30 +1,64 @@
-/// A macro that creates two structs containing pairs of channels with crisscrossed types.
-///
-/// This macro takes two type parameters, `$struct1` and `$struct2`, and creates two structs with
-/// the specified types. Each struct contains a pair of channels with the specified type
-/// parameters. The channels are crisscrossed, so `tx` of `$struct1` sends data to `rx` of
-/// `$struct2`, and `tx` of `$struct2` sends data to `rx` of `$struct1`.
-///
-/// # Examples
-/// ```ignore
-/// // Instead of:
-/// # use std::sync::mpsc::{Sender, Receiver};
-/// # struct MyType<T,U> {
-/// #     tx1: Sender<T>,
-/// #     rx2: Receiver<U>,
-/// # }
-/// # struct MyType2<T,U> {
-/// #     tx2: Sender<U>,
-/// #     rx1: Receiver<T>,
-/// # }
-/// // and so on...
-///
-/// // you can do this:
-/// let (mytype1, mytype2) = link!(MyType<u32>, MyType2<u64>);
-///
-///
-/// ///etc...
-/// ```
+//! This crate is real simple, if makes a set of channels and criss-crosses them.
+//!
+//! I fint myself using this pattern a bit lately to get... things that're hard to get talking to
+//! eachother talking to eachother.
+//! There is probably a superiour way -- but, I don't know it.
+//!
+//! Conceptually, I think of it as making a bridge, it needn't send the same Types<T> across,
+//! infact you can put all sorts of things in there.. I know, I have.
+//!
+//!  ```rust
+//!use link::link;
+//!
+//!let (link1, link2) = link!(pub, MyType<u32>, MyType2<u64>);
+//!// link2 receives from link1
+//!link1.send(42).unwrap();
+//!assert_eq!(link2.recv().unwrap(), 42u32);
+//!// link1 receives from link2
+//!link2.tx.send(43 as u64).unwrap();
+//!assert_eq!(link1.rx.recv().unwrap(), 43);
+//! ```
+//!
+//! ## Which should save you typing that alernative which would be all this:
+//!
+//! ```ignore
+//!pub struct Link1 {
+//!    tx: std::sync::mpsc::Sender<u32>,
+//!    rx: std::sync::mpsc::Receiver<u64>,
+//!}
+//!pub struct Link2 {
+//!    tx: std::sync::mpsc::Sender<u64>,
+//!    rx: std::sync::mpsc::Receiver<u32>,
+//!}
+//!impl Link1 {
+//!    fn send(&self, t: u32) -> std::result::Result<(), std::sync::mpsc::SendError<u32>> {
+//!        self.tx.send(t)
+//!    }
+//!
+//!    fn recv(&self) -> Result<u64, std::sync::mpsc::RecvError> {
+//!        self.rx.recv()
+//!    }
+//!}
+//!
+//!impl Link2 {
+//!    fn send(&self, t: u64) -> std::result::Result<(), std::sync::mpsc::SendError<u64>> {
+//!        self.tx.send(t)
+//!    }
+//!
+//!    fn recv(&self) -> Result<u32, std::sync::mpsc::RecvError> {
+//!        self.rx.recv()
+//!    }
+//!}
+//!fn init() {
+//!    let (tx1, rx1) = std::sync::mpsc::channel::<u32>();
+//!    let (tx2, rx2) = std::sync::mpsc::channel::<u64>();
+//!
+//!    let link1 = Link1 { tx: tx1, rx: rx2 };
+//!    let link2 = Link2 { tx: tx2, rx: rx1 };
+//!}
+//!```
+//! See the tests for example usage.
+
 #[macro_export]
 macro_rules! link {
     ($v:vis, $struct1:ident<$t:ty>, $struct2:ident<$t2:ty>) => {{
@@ -68,13 +102,11 @@ macro_rules! link {
             }
         }
 
-        // pub fn init() -> ($t, $t2) {
-        let (tx1, rx2) = std::sync::mpsc::channel::<$t>();
-        let (tx2, rx1) = std::sync::mpsc::channel::<$t2>();
+        let (tx1, rx1) = std::sync::mpsc::channel::<$t>();
+        let (tx2, rx2) = std::sync::mpsc::channel::<$t2>();
 
-        ($struct1 { tx: tx1, rx: rx1 }, $struct2 { tx: tx2, rx: rx2 })
-        // }
-        //
+        ($struct1 { tx: tx1, rx: rx2 }, $struct2 { tx: tx2, rx: rx1 })
+
     }};
 }
 
@@ -84,15 +116,36 @@ mod tests {
 
     #[test]
     fn test_link_macro() {
-        let value = 42u32;
-
         let (link1, link2) = link!(pub, MyType<u32>, MyType2<u64>);
 
+        // link2 receives from link1
         link1.send(42).unwrap();
-        let result = link2.recv().unwrap();
-        assert_eq!(result, 42u32);
+        assert_eq!(link2.recv().unwrap(), 42u32);
 
-        link1.tx.send(value).unwrap();
-        assert_eq!(link2.rx.recv().unwrap(), value);
+        // link1 receives from link2
+        link2.tx.send(43 as u64).unwrap();
+        assert_eq!(link1.rx.recv().unwrap(), 43);
+    }
+
+    #[test]
+    fn common_fruit() {
+        use std::collections::HashSet;
+        let (link1, link2) = link!(pub, Link1<Vec<String>>, Link2<HashSet<i32>>);
+
+        let fruits = vec!["apple", "banana", "orange"]
+            .iter()
+            .map(|x| x.to_string())
+            .collect();
+
+        let mut hashset = HashSet::new();
+        hashset.insert(456789);
+
+        // link2 receives from link1
+        link1.send(fruits).unwrap();
+        assert!(link2.recv().unwrap().iter().any(|x| x == "banana"));
+
+        // link1 receives from link2
+        link2.send(hashset).unwrap();
+        assert!(link1.recv().unwrap().get(&456789).is_some());
     }
 }
