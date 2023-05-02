@@ -14,7 +14,7 @@ There's almost certainly a nicer way of doing this... but, I dunno what that is.
 
 ```toml
 [dependencies]
-linkk = "0.1.0"
+linkk = "0.1.2"
 ```
 
 ## Usage:
@@ -22,15 +22,17 @@ linkk = "0.1.0"
 Here is an example of how to use this crate:
 
 ```rust
-use linkk::link;
+use linkk::*;
 
-let (link1, link2) = link!(pub, A_2_B<u32>, B_2_A<u64>); // The tx/rx pairs needen't be the same type.
+setup_linkk!(pub, Window2os<u32>, Os2Window<u64>);
 
-// link2 receives from link1
-link1.send(42).unwrap();
-assert_eq!(link2.recv().unwrap(), 42u32);
+    let (link2, link1) = make_new_linkk();
 
-// link1 receives from link2
-link2.tx.send(43 as u64).unwrap();
-assert_eq!(link1.rx.recv().unwrap(), 43);
+    // link2 receives from link1
+    link2.send(42).unwrap();
+    assert_eq!(link1.recv().unwrap(), 42u32);
+
+    // link1 receives from link2
+    link1.tx.send(43 as u64).unwrap();
+    assert_eq!(link2.rx.recv().unwrap(), 43);
 ```
