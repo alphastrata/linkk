@@ -1,11 +1,11 @@
 //! This crate is real simple, if makes a set of channels and criss-crosses them.
 //!
 //! I find myself using this pattern a bit lately to get... things that're hard to get talking to
-//! eachother talking to eachother.
+//! each other talking to each other.
 //! There is probably a better way -- but, I don't know it.
 //!
 //! Conceptually, I think of it as making a bridge, it needn't send the same `<T>` across,
-//! infact you can put all sorts of things in there.. I know, I have.
+//! in fact you can put all sorts of things in there.. I know, I have.
 //!
 //!
 //!```rust
@@ -22,7 +22,7 @@
 //!assert_eq!(w2os.rx.recv().unwrap(), 43);
 //! ```
 //!
-//! ## Which should save you typing that alernative which would be all this:
+//! ## Which should save you typing that alternative which would be all this:
 //!
 //! ```
 //!pub struct Link1 {
